@@ -10,6 +10,8 @@ from .views import main_spa
 
 router = DefaultRouter()
 router.register(r'hobbies', HobbyViewSet, basename='hobby')
+router.register(r'profile', views.UserProfileViewSet, basename='profile')
+
 
 urlpatterns = [
     path('', main_spa),

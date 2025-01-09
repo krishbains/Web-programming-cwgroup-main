@@ -10,7 +10,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from .models import Hobby
-from .serializers import HobbySerializer
+from .serializers import HobbySerializer, UserProfileSerializer
 
 
 def register_view(request):
@@ -76,5 +76,35 @@ class HobbyViewSet(viewsets.ModelViewSet):
             status=status.HTTP_201_CREATED if created else status.HTTP_200_OK
         )
 
+class UserProfileViewSet(viewsets.GenericViewSet):
+    serializer_class = UserProfileSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        # Return the current authenticated user
+        return self.request.user
+
+    @action(detail=False, methods=['get'])
+    def me(self, request):
+        # Get current user's profile
+        serializer = self.get_serializer(request.user)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['put', 'patch'])
+    def update_profile(self, request):
+        user = self.get_object()
+        is_partial = request.method == 'PATCH'
+
+        serializer = self.get_serializer(
+            user,
+            data=request.data,
+            partial=is_partial
+        )
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 def main_spa(request: HttpRequest) -> HttpResponse:
     return render(request, 'api/spa/index.html', {})
