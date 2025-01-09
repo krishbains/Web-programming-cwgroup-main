@@ -2,7 +2,16 @@ from django.http import HttpResponse, HttpRequest, JsonResponse
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, logout
 from django.contrib.auth.forms import AuthenticationForm
+from rest_framework import viewsets
 from .forms import CustomUserCreationForm
+from rest_framework.decorators import action
+from django.db import transaction
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework import status
+from .models import Hobby
+from .serializers import HobbySerializer
+
 
 def register_view(request):
     if request.method == 'POST':
@@ -29,6 +38,43 @@ def login_view(request):
 def logout_view(request):
     logout(request)
     return redirect('login')
+
+
+class HobbyViewSet(viewsets.ModelViewSet):
+    queryset = Hobby.objects.all()
+    serializer_class = HobbySerializer
+    permission_classes = [IsAuthenticated]
+
+    @action(detail=False, methods=['post'])
+    @transaction.atomic
+    def add_to_profile(self, request):
+        name = request.data.get('name', '').lower().strip()
+
+        if not name:
+            return Response(
+                {'error': 'Name is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+
+        hobby, created = Hobby.objects.get_or_create(
+            name=name,
+            defaults={'name': name}
+        )
+
+        request.user.hobbies.add(hobby)
+
+        # Use serializer only once for response
+        data = {
+            'id': hobby.id,
+            'name': hobby.name,
+            'created': created
+        }
+
+        return Response(
+            data,
+            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK
+        )
 
 def main_spa(request: HttpRequest) -> HttpResponse:
     return render(request, 'api/spa/index.html', {})
