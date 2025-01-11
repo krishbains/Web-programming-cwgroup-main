@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.contrib import admin
-from django.urls import include, path
+from django.urls import include, path, re_path
 from django.http import HttpResponse
 from . import views
 from django.views.generic import TemplateView
@@ -12,13 +12,13 @@ router = DefaultRouter()
 router.register(r'hobbies', HobbyViewSet, basename='hobby')
 router.register(r'profile', views.UserProfileViewSet, basename='profile')
 
-
 urlpatterns = [
     path('', main_spa),
     path('home/', TemplateView.as_view(template_name='api/spa/home.html'), name='home'),
     path('register/', views.register_view, name='register'),
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
+    re_path(r'^.*/$', views.other_spa_routes, name='other-routes'),
 
     path('api/', include(router.urls)),
 ]
