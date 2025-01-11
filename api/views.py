@@ -1,3 +1,4 @@
+from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, HttpRequest, JsonResponse
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, logout
@@ -11,6 +12,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from .models import Hobby
 from .serializers import HobbySerializer, UserProfileSerializer
+from django.http import JsonResponse
 
 
 def register_view(request):
@@ -30,7 +32,7 @@ def login_view(request):
         if form.is_valid():
             api = form.get_user()
             login(request, api)
-            return redirect('home')
+            return redirect('/')
     else:
         form = AuthenticationForm()
     return render(request, 'api/spa/login.html', {'form': form})
@@ -106,5 +108,11 @@ class UserProfileViewSet(viewsets.GenericViewSet):
             return Response(serializer.data)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@login_required(login_url='login')
 def main_spa(request: HttpRequest) -> HttpResponse:
+    return render(request, 'api/spa/index.html', {})
+
+@login_required(login_url='login')
+def other_spa_routes(request, path=None):
     return render(request, 'api/spa/index.html', {})
