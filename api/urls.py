@@ -18,7 +18,6 @@ urlpatterns = [
     path('register/', views.register_view, name='register'),
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
-    re_path(r'^.*/$', views.other_spa_routes, name='other-routes'),
-
     path('api/', include(router.urls)),
+    re_path(r'^(?!api/).*$', views.other_spa_routes, name='other-routes'),
 ]
