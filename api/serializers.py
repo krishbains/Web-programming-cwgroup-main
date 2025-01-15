@@ -10,26 +10,24 @@ class HobbySerializer(serializers.ModelSerializer):
 class UserProfileSerializer(serializers.ModelSerializer):
     current_password = serializers.CharField(write_only=True, required=False)
     new_password = serializers.CharField(write_only=True, required=False)
+    hobbies = HobbySerializer(many=True, read_only=True)  # Make hobbies read-only if not handling hobby updates
 
     class Meta:
         model = CustomUser
         fields = ['username', 'email', 'date_of_birth', 'hobbies', 'current_password', 'new_password']
-
-    def validate_email(self, value):
-        # Check if email exists for other users
-        if self.instance and value != self.instance.email:  # If email is being changed
-            if CustomUser.objects.filter(email=value).exists():
-                raise serializers.ValidationError("This email is already in use.")
-        return value
+        extra_kwargs = {
+            'username': {'required': False},
+            'email': {'required': False},
+            'date_of_birth': {'required': False}
+        }
 
     def validate(self, data):
-        # If user is trying to change password, validate current password
-        if 'new_password' in data and not data.get('current_password'):
-            raise serializers.ValidationError(
-                {'current_password': 'Current password is required to set new password'}
-            )
-
-        if 'current_password' in data:
+        # If user is trying to change password
+        if 'new_password' in data:
+            if not data.get('current_password'):
+                raise serializers.ValidationError(
+                    {'current_password': 'Current password is required to set new password'}
+                )
             if not self.instance.check_password(data['current_password']):
                 raise serializers.ValidationError(
                     {'current_password': 'Wrong password'}
@@ -41,7 +39,14 @@ class UserProfileSerializer(serializers.ModelSerializer):
         # Handle password update if provided
         if 'new_password' in validated_data:
             instance.set_password(validated_data['new_password'])
-            validated_data.pop('new_password')
+            # Remove password fields from validated_data
+            validated_data.pop('new_password', None)
             validated_data.pop('current_password', None)
+            instance.save()
 
-        return super().update(instance, validated_data)
+        # Update other fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        instance.save()
+        return instance

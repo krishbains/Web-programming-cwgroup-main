@@ -14,6 +14,13 @@
             >
                 Other Page
             </router-link>
+            |
+            <router-link
+                class=""
+                :to="{name: 'Profile page'}"
+            >
+                Profile Page
+            </router-link>
         </div>
         <RouterView class="flex-shrink-0" />
     </main>
