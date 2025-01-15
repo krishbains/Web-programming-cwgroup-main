@@ -6,20 +6,22 @@ This template should be used as the starting point for your group coursework in 
 
 To run this project in your development machine, follow these steps:
 
-1. Create and activate a conda environment
+1. Create and activate a conda environment. Ensure it is using Python Version 3.11
 
 2. Download this repo as a zip and add the files to your own private repo.
 
-3. Install Pyhton dependencies (main folder):
+3. Install Python dependencies (main folder):
 
     ```console
-    $ pip install -r requirements.txt
+    pip install -r requirements.txt
     ```
 
 4. Create a development database:
+    N.B (make sure the api/migrations folder contains only the file __init__.py, and no other migrations)
 
     ```console
-    $ python manage.py migrate
+    python manage.py makemigrations
+    python manage.py migrate
     ```
 
 5. Install JavaScript dependencies (from 'frontend' folder):
