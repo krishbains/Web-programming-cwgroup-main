@@ -16,30 +16,33 @@ To run this project in your development machine, follow these steps:
     pip install -r requirements.txt
     ```
 
-4. Create a development database:
-    N.B (make sure the api/migrations folder contains only the file __init__.py, and no other migrations)
+4. Create a development database. Ensure the api/migrations folder contains only the file __init__.py, and no other migrations.
 
     ```console
     python manage.py makemigrations
+    ```
+    Then
+    ```console
     python manage.py migrate
     ```
+
 
 5. Install JavaScript dependencies (from 'frontend' folder):
 
     ```console
-    $ npm install
+    npm install
     ```
 
 6. If everything is alright, you should be able to start the Django development server from the main folder:
 
     ```console
-    $ python manage.py runserver
+    python manage.py runserver
     ```
 
 7. and the Vue server from the 'frontend' sub-folder:
 
     ```console
-    $ npm run dev
+    npm run dev
     ```
 
 8. Open your browser and go to http://localhost:5173, you will be greeted with a template page.
