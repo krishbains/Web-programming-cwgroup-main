@@ -13,6 +13,7 @@ router.register(r'hobbies', HobbyViewSet, basename='hobby')
 router.register(r'profile', views.UserProfileViewSet, basename='profile')
 
 urlpatterns = [
+    path('admin/', admin.site.urls),
     path('', main_spa),
     path('home/', TemplateView.as_view(template_name='api/spa/home.html'), name='home'),
     path('register/', views.register_view, name='register'),

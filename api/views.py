@@ -13,6 +13,10 @@ from rest_framework import status
 from .models import Hobby
 from .serializers import HobbySerializer, UserProfileSerializer
 from django.http import JsonResponse
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import ensure_csrf_cookie
+from django.contrib.auth import update_session_auth_hash
+
 
 
 def register_view(request):
@@ -78,6 +82,7 @@ class HobbyViewSet(viewsets.ModelViewSet):
             status=status.HTTP_201_CREATED if created else status.HTTP_200_OK
         )
 
+@method_decorator(ensure_csrf_cookie, name='dispatch')
 class UserProfileViewSet(viewsets.GenericViewSet):
     serializer_class = UserProfileSerializer
     permission_classes = [IsAuthenticated]
@@ -97,15 +102,26 @@ class UserProfileViewSet(viewsets.GenericViewSet):
         user = self.get_object()
         is_partial = request.method == 'PATCH'
 
+        # Remove empty fields from request data
+        cleaned_data = {k: v for k, v in request.data.items() if v is not None and v != ''}
+
         serializer = self.get_serializer(
             user,
-            data=request.data,
+            data=cleaned_data,
             partial=is_partial
         )
 
         if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
+            # Check if only password is being updated
+            is_password_only_update = set(cleaned_data.keys()).issubset({'current_password', 'new_password'})
+
+            user = serializer.save()
+
+            # If password was changed, update session
+            if 'new_password' in serializer.validated_data:
+                update_session_auth_hash(request, user)
+
+            return Response(self.get_serializer(user).data)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
