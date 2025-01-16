@@ -1,12 +1,9 @@
-import {ApiResponse, Hobby, UserProfile} from "./types.ts";
+import { ApiResponse, Hobby, UserProfile } from "./types.ts";
 
 const API_BASE_URL = '/api';
 
 class ApiService {
-    private async request<T>(
-        endpoint: string,
-        options: RequestInit = {}
-    ): Promise<ApiResponse<T>> {
+    private async request<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
         try {
             // Get CSRF token from cookie
             const csrfToken = document.cookie
@@ -26,8 +23,7 @@ class ApiService {
                 credentials: 'include',
             });
 
-            if(!response.ok)
-            {
+            if (!response.ok) {
                 try {
                     const error = await response.json();
                     return {
@@ -38,7 +34,7 @@ class ApiService {
                     return {
                         error: 'An error occurred',
                         status: response.status,
-                    }
+                    };
                 }
             }
 
@@ -72,10 +68,10 @@ class ApiService {
         return this.request<Hobby[]>('/hobbies/');
     }
 
-    async addHobby(name: string): Promise<ApiResponse<Hobby>> {
+    async addHobby(hobby_name: string, benefits: string, rating: number): Promise<ApiResponse<Hobby>> {
         return this.request<Hobby>('/hobbies/add_to_profile/', {
             method: 'POST',
-            body: JSON.stringify({name}),
+            body: JSON.stringify({ hobby_name, benefits, rating }),
         });
     }
 
