@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import CustomUser, Hobby
+from .models import CustomUser, Hobby, FriendRequest
 
 class HobbySerializer(serializers.ModelSerializer):
     class Meta:
@@ -50,3 +50,12 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
         instance.save()
         return instance
+
+class FriendRequestSerializer(serializers.ModelSerializer):
+    sender_username = serializers.CharField(source='sender.username', read_only=True)
+    receiver_username = serializers.CharField(source='receiver.username', read_only=True)
+
+    class Meta:
+        model = FriendRequest
+        fields = ['id', 'sender', 'receiver', 'sender_username', 'receiver_username', 'status', 'created_at', 'updated_at']
+        read_only_fields = ['status', 'created_at', 'updated_at']

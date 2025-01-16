@@ -3,19 +3,20 @@ from django.http import HttpResponse, HttpRequest, JsonResponse
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, logout
 from django.contrib.auth.forms import AuthenticationForm
-from rest_framework import viewsets
+from rest_framework import viewsets, permissions
 from .forms import CustomUserCreationForm
 from rest_framework.decorators import action
 from django.db import transaction
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Hobby
-from .serializers import HobbySerializer, UserProfileSerializer
+from .models import Hobby, FriendRequest
+from .serializers import HobbySerializer, UserProfileSerializer, FriendRequestSerializer
 from django.http import JsonResponse
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.contrib.auth import update_session_auth_hash
+from django.db import models
 
 
 
@@ -34,8 +35,9 @@ def login_view(request):
     if request.method == 'POST':
         form = AuthenticationForm(request, data=request.POST)
         if form.is_valid():
-            api = form.get_user()
-            login(request, api)
+            user = form.get_user()
+            login(request, user)
+            # Redirect to root URL where Vue SPA is served
             return redirect('/')
     else:
         form = AuthenticationForm()
@@ -127,8 +129,108 @@ class UserProfileViewSet(viewsets.GenericViewSet):
 
 @login_required(login_url='login')
 def main_spa(request: HttpRequest) -> HttpResponse:
+    """
+    Main view that serves the Vue SPA.
+    If user is not authenticated, they will be redirected to login.
+    """
     return render(request, 'api/spa/index.html', {})
 
 @login_required(login_url='login')
 def other_spa_routes(request, path=None):
     return render(request, 'api/spa/index.html', {})
+
+class FriendRequestViewSet(viewsets.ModelViewSet):
+    serializer_class = FriendRequestSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return FriendRequest.objects.filter(
+            models.Q(sender=self.request.user) | 
+            models.Q(receiver=self.request.user)
+        )
+
+    @action(detail=False, methods=['get'])
+    def pending(self, request):
+        """Get all pending friend requests for the current user"""
+        pending_requests = FriendRequest.objects.filter(
+            receiver=request.user,
+            status=FriendRequest.PENDING
+        )
+        serializer = self.get_serializer(pending_requests, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def friends(self, request):
+        """Get all friends of the current user"""
+        user = request.user
+        friends = user.friends.all()
+        serializer = UserProfileSerializer(friends, many=True)
+        return Response(serializer.data)
+
+    def create(self, request):
+        receiver_id = request.data.get('receiver')
+        if receiver_id == request.user.id:
+            return Response(
+                {'error': 'You cannot send a friend request to yourself'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Check if a friend request already exists
+        existing_request = FriendRequest.objects.filter(
+            (models.Q(sender=request.user) & models.Q(receiver=receiver_id)) |
+            (models.Q(sender=receiver_id) & models.Q(receiver=request.user)),
+            status=FriendRequest.PENDING
+        ).first()
+
+        if existing_request:
+            return Response(
+                {'error': 'A friend request already exists between these users'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Check if users are already friends
+        if request.user.friends.filter(id=receiver_id).exists():
+            return Response(
+                {'error': 'Users are already friends'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        serializer = self.get_serializer(data={
+            'sender': request.user.id,
+            'receiver': receiver_id
+        })
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['post'])
+    def accept(self, request, pk=None):
+        friend_request = self.get_object()
+        if friend_request.receiver != request.user:
+            return Response(
+                {'error': 'You can only accept requests sent to you'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        if friend_request.accept():
+            return Response({'status': 'friend request accepted'})
+        return Response(
+            {'error': 'Friend request cannot be accepted'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    @action(detail=True, methods=['post'])
+    def reject(self, request, pk=None):
+        friend_request = self.get_object()
+        if friend_request.receiver != request.user:
+            return Response(
+                {'error': 'You can only reject requests sent to you'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        if friend_request.reject():
+            return Response({'status': 'friend request rejected'})
+        return Response(
+            {'error': 'Friend request cannot be rejected'},
+            status=status.HTTP_400_BAD_REQUEST
+        )

@@ -39,6 +39,7 @@ class CustomUser(AbstractUser):
     password = models.CharField(max_length=255)
     date_of_birth = models.DateField(null=True, blank=True)
     hobbies = models.ManyToManyField(Hobby, related_name='users', blank=True)
+    friends = models.ManyToManyField('self', blank=True, symmetrical=True)
 
     objects = CustomUserManager()
 
@@ -47,3 +48,41 @@ class CustomUser(AbstractUser):
 
     def __str__(self):
         return self.username
+
+class FriendRequest(models.Model):
+    PENDING = 'pending'
+    ACCEPTED = 'accepted'
+    REJECTED = 'rejected'
+    
+    STATUS_CHOICES = [
+        (PENDING, 'Pending'),
+        (ACCEPTED, 'Accepted'),
+        (REJECTED, 'Rejected'),
+    ]
+
+    sender = models.ForeignKey(CustomUser, related_name='sent_friend_requests', on_delete=models.CASCADE)
+    receiver = models.ForeignKey(CustomUser, related_name='received_friend_requests', on_delete=models.CASCADE)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=PENDING)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('sender', 'receiver')
+
+    def __str__(self):
+        return f"{self.sender} -> {self.receiver} ({self.status})"
+
+    def accept(self):
+        if self.status == self.PENDING:
+            self.status = self.ACCEPTED
+            self.save()
+            self.sender.friends.add(self.receiver)
+            return True
+        return False
+
+    def reject(self):
+        if self.status == self.PENDING:
+            self.status = self.REJECTED
+            self.save()
+            return True
+        return False
