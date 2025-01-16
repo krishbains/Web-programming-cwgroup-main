@@ -2,11 +2,15 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser, UserManager
 
 class Hobby(models.Model):
-    name = models.CharField(max_length=255)
-    created_at = models.DateTimeField(auto_now_add=True)
+    """
+    This class stores information about a Hobby.
+    """
+    hobby_name = models.CharField(max_length=255, unique=True, blank=False)
+    benefits = models.TextField(blank=False)
+    rating = models.IntegerField(blank=False)
 
     def __str__(self):
-        return self.name
+        return self.hobby_name
 
     class Meta:
         verbose_name_plural = "hobbies"
@@ -39,7 +43,6 @@ class CustomUser(AbstractUser):
     password = models.CharField(max_length=255)
     date_of_birth = models.DateField(null=True, blank=True)
     hobbies = models.ManyToManyField(Hobby, related_name='users', blank=True)
-
     objects = CustomUserManager()
 
     USERNAME_FIELD = 'username'
