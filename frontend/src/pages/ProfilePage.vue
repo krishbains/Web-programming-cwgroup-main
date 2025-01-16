@@ -24,6 +24,26 @@
           {{ profile?.date_of_birth ? new Date(profile.date_of_birth).toLocaleDateString() : 'Not set' }}
         </div>
 
+        <div class="detail-item">
+          <strong>Hobbies:</strong>
+          <div class="hobby-tags">
+            <span v-for="hobby in profile?.hobbies" :key="hobby.id" class="hobby-tag">
+              {{ hobby.name }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Add Hobby Dropdown -->
+        <div class="add-hobby">
+          <label for="hobby-select" class="form-label">Add Hobby</label>
+          <select v-model="selectedHobby" id="hobby-select" class="form-select">
+            <option v-for="hobby in allHobbies" :key="hobby.id" :value="hobby.id">
+              {{ hobby.name }}
+            </option>
+          </select>
+          <button @click="addHobby" class="btn btn-primary mt-2">Add Hobby</button>
+        </div>
+
         <button @click="isEditing = true" class="edit-btn">
           Edit Profile
         </button>
@@ -54,7 +74,8 @@ export default defineComponent({
 
   data() {
     return {
-      isEditing: false
+      isEditing: false,
+      selectedHobby: null, // To store the selected hobby ID
     };
   },
 
@@ -70,6 +91,9 @@ export default defineComponent({
     },
     error() {
       return this.userStore.error;
+    },
+    allHobbies() {
+      return this.userStore.allHobbies; // Fetch all available hobbies from the store
     }
   },
 
@@ -79,12 +103,28 @@ export default defineComponent({
       if (success) {
         this.isEditing = false;
       }
+    },
+
+    async addHobby() {
+      if (this.selectedHobby) {
+        // Add hobby to the profile
+        const success = await this.userStore.addHobbyToProfile(this.selectedHobby);
+        if (success) {
+          // Optionally, update the profile's hobbies list here
+          this.profile.hobbies.push(this.allHobbies.find(hobby => hobby.id === this.selectedHobby));
+          this.selectedHobby = null; // Clear the selected hobby after adding
+        }
+      }
     }
   },
 
   async created() {
     if (!this.profile) {
       await this.userStore.fetchProfile();
+    }
+    // Fetch all hobbies available to the user
+    if (!this.userStore.allHobbies.length) {
+      await this.userStore.fetchAllHobbies();
     }
   }
 });
@@ -117,6 +157,14 @@ export default defineComponent({
   padding: 5px 10px;
   border-radius: 15px;
   font-size: 0.9em;
+}
+
+.add-hobby {
+  margin-top: 20px;
+}
+
+.add-hobby select {
+  width: 100%;
 }
 
 .edit-btn {
