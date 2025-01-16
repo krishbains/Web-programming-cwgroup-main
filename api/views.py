@@ -13,6 +13,7 @@ from rest_framework import status
 from .models import Hobby, CustomUser
 from .serializers import HobbySerializer, UserProfileSerializer
 from django.http import JsonResponse
+from django_filters import rest_framework as filters
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.filters import OrderingFilter
@@ -112,12 +113,30 @@ class UserProfileViewSet(viewsets.GenericViewSet):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
+class UserFilter(filters.FilterSet):
+    min_age = filters.NumberFilter(field_name='date_of_birth', lookup_expr='lte', method='filter_by_age')
+    max_age = filters.NumberFilter(field_name='date_of_birth', lookup_expr='gte', method='filter_by_age')
+
+    class Meta:
+        model = CustomUser
+        fields = ['min_age', 'max_age']
+
+    def filter_by_age(self, queryset, name, value):
+        from datetime import date
+        today = date.today()
+        if name == 'min_age':
+            return queryset.filter(date_of_birth__lte=today.replace(year=today.year - value))
+        if name == 'max_age':
+            return queryset.filter(date_of_birth__gte=today.replace(year=today.year - value))
+        return queryset
+
+    
 class SimilarUserListView(generics.ListAPIView):
     serializer_class = UserProfileSerializer
     permission_classes = [IsAuthenticated]
     pagination_class = PageNumberPagination
     filter_backends = [DjangoFilterBackend, OrderingFilter]
-    filterset_fields = ['date_of_birth']
+    filterset_class = UserFilter
     ordering = ['-similarity_score']
 
     def get_queryset(self):

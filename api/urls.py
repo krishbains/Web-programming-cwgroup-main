@@ -5,7 +5,7 @@ from django.http import HttpResponse
 from . import views
 from django.views.generic import TemplateView
 from rest_framework.routers import DefaultRouter
-from .views import main_spa, HobbyViewSet, SimilarUserListView
+from .views import main_spa, HobbyViewSet, SimilarUserListView, UserProfileViewSet, register_view, login_view, logout_view
 from .views import main_spa
 
 router = DefaultRouter()

@@ -10,10 +10,12 @@ class HobbySerializer(serializers.ModelSerializer):
 class UserProfileSerializer(serializers.ModelSerializer):
     current_password = serializers.CharField(write_only=True, required=False)
     new_password = serializers.CharField(write_only=True, required=False)
+    similarity_score = serializers.SerializerMethodField()
 
     class Meta:
         model = CustomUser
-        fields = ['username', 'email', 'date_of_birth', 'hobbies', 'current_password', 'new_password' 'similarity_score']
+        fields = ['username', 'email', 'date_of_birth', 'hobbies',]
+        #'current_password', 'new_password' 'similarity_score' are global
 
     def validate_email(self, value):
         # Check if email exists for other users
