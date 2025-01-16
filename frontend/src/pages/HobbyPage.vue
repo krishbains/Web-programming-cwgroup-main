@@ -1,9 +1,7 @@
 <template>
     <div class="container mt-4">
       <h1 class="display-3 text-primary text-center">All About Hobbies</h1>
-      <p class="lead text-secondary text-center mt-3">
-        Discover, add, and manage your favorite hobbies effortlessly!
-      </p>
+
       
       <!-- Section for adding a new hobby -->
       <section class="mt-5">
