@@ -16,9 +16,9 @@ from django.http import JsonResponse
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.contrib.auth import update_session_auth_hash
+from rest_framework.views import APIView
 
-
-
+# Register, Login, and Logout Views
 def register_view(request):
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)
@@ -45,7 +45,7 @@ def logout_view(request):
     logout(request)
     return redirect('login')
 
-
+# ViewSets for Hobby Model
 class HobbyViewSet(viewsets.ModelViewSet):
     queryset = Hobby.objects.all()
     serializer_class = HobbySerializer
@@ -61,7 +61,6 @@ class HobbyViewSet(viewsets.ModelViewSet):
                 {'error': 'Name is required'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-
 
         hobby, created = Hobby.objects.get_or_create(
             name=name,
@@ -125,6 +124,105 @@ class UserProfileViewSet(viewsets.GenericViewSet):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+# APIViews for Hobby Model
+class AllHobbiesAPIView(APIView):
+    """
+    View for listing all hobbies and creating new ones.
+    """
+    def get(self, request):
+        hobbies = Hobby.objects.all()
+        serializer = HobbySerializer(hobbies, many=True)
+        return JsonResponse({"hobbies": serializer.data}, status=200)
+
+    def post(self, request):
+        data = request.data
+        serializer = HobbySerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return JsonResponse({"message": "Hobby created successfully.", "hobby": serializer.data}, status=201)
+        return JsonResponse({"errors": serializer.errors}, status=400)
+
+class HobbyInfo(APIView):
+    """
+    View for retrieving, updating, or deleting a specific hobby by its ID.
+    """
+    def get(self, request, pk):
+        try:
+            hobby = Hobby.objects.get(pk=pk)
+            serializer = HobbySerializer(hobby)
+            return JsonResponse({"hobby": serializer.data}, status=200)
+        except Hobby.DoesNotExist:
+            return JsonResponse({"message": "Hobby not found."}, status=404)
+
+    def put(self, request, pk):
+        try:
+            hobby = Hobby.objects.get(pk=pk)
+            serializer = HobbySerializer(hobby, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return JsonResponse({"message": "Hobby updated successfully.", "hobby": serializer.data}, status=200)
+            return JsonResponse({"errors": serializer.errors}, status=400)
+        except Hobby.DoesNotExist:
+            return JsonResponse({"message": "Hobby not found."}, status=404)
+
+    def delete(self, request, pk):
+        try:
+            hobby = Hobby.objects.get(pk=pk)
+            hobby.delete()
+            return JsonResponse({"message": "Hobby deleted successfully."}, status=200)
+        except Hobby.DoesNotExist:
+            return JsonResponse({"message": "Hobby not found."}, status=404)
+
+class UserHobbies(APIView):
+    """
+    View for retrieving, adding, and deleting hobbies for a specific user.
+    """
+    def get(self, request):
+        user = request.user
+        if not user.is_authenticated:
+            return JsonResponse({"message": "User not authenticated."}, status=401)
+
+        hobbies = user.hobbies.all()
+        serializer = HobbySerializer(hobbies, many=True)
+        return JsonResponse({"hobbies": serializer.data}, status=200)
+
+    def post(self, request):
+        user = request.user
+        if not user.is_authenticated:
+            return JsonResponse({"message": "User not authenticated."}, status=401)
+
+        hobby_name = request.data.get("hobby")
+        if not hobby_name:
+            return JsonResponse({"message": "Hobby name is required."}, status=400)
+
+        try:
+            hobby = Hobby.objects.get(name=hobby_name)
+            user.hobbies.add(hobby)
+            user.save()
+            updated_hobbies = HobbySerializer(user.hobbies.all(), many=True)
+            return JsonResponse({"message": "Hobby added successfully.", "hobbies": updated_hobbies.data}, status=200)
+        except Hobby.DoesNotExist:
+            return JsonResponse({"message": "Hobby does not exist."}, status=404)
+
+    def delete(self, request):
+        user = request.user
+        if not user.is_authenticated:
+            return JsonResponse({"message": "User not authenticated."}, status=401)
+
+        hobby_name = request.data.get("hobby")
+        if not hobby_name:
+            return JsonResponse({"message": "Hobby name is required."}, status=400)
+
+        try:
+            hobby = Hobby.objects.get(name=hobby_name)
+            user.hobbies.remove(hobby)
+            user.save()
+            updated_hobbies = HobbySerializer(user.hobbies.all(), many=True)
+            return JsonResponse({"message": "Hobby removed successfully.", "hobbies": updated_hobbies.data}, status=200)
+        except Hobby.DoesNotExist:
+            return JsonResponse({"message": "Hobby does not exist."}, status=404)
+
+# Login-required views for SPA
 @login_required(login_url='login')
 def main_spa(request: HttpRequest) -> HttpResponse:
     return render(request, 'api/spa/index.html', {})
