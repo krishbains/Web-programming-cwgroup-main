@@ -26,7 +26,7 @@ def register_view(request):
         if form.is_valid():
             api = form.save()
             login(request, api)
-            return redirect('home')
+            return redirect('/')
     else:
         form = CustomUserCreationForm()
     return render(request, 'api/spa/register.html', {'form': form})
