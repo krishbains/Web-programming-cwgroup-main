@@ -8,6 +8,7 @@ from rest_framework.routers import DefaultRouter
 from .views import main_spa, HobbyViewSet
 from .views import main_spa
 
+
 router = DefaultRouter()
 router.register(r'hobbies', HobbyViewSet, basename='hobby')
 router.register(r'profile', views.UserProfileViewSet, basename='profile')
@@ -20,5 +21,8 @@ urlpatterns = [
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
     path('api/', include(router.urls)),
+    path('api/hobbies', views.AllHobbies.as_view(), name="all-hobbies"),
+    path('api/hobby/<int:pk>', views.HobbyInfo.as_view(), name="hobby-info"),
+    path('api/user/hobbies', views.UserHobbies.as_view(), name='user-hobbies'),
     re_path(r'^(?!api/).*$', views.other_spa_routes, name='other-routes'),
 ]
