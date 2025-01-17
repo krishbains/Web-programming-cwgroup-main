@@ -6,8 +6,8 @@ class Hobby(models.Model):
     This class stores information about a Hobby.
     """
     hobby_name = models.CharField(max_length=255, unique=True, blank=False)
-    benefits = models.TextField(blank=False)
-    rating = models.IntegerField(blank=False)
+    benefits = models.TextField(blank=False, default="No benefits specified")
+    rating = models.IntegerField(blank=False, default=0)
 
     def __str__(self):
         return self.hobby_name
