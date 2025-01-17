@@ -168,7 +168,7 @@ def create_default_data(sender, **kwargs):
                 'username': 'leo_rodriguez',
                 'email': 'l.rodriguez@university.com',
                 'password': 'Pass123!',
-                'date_of_birth': '1996-12-24',
+                'date_of_birth': '1925-12-24',
                 'hobbies': ['Traveling', 'Cooking', 'Sports']
             }
         ]
