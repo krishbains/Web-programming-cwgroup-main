@@ -9,7 +9,7 @@ class CustomUserCreationForm(UserCreationForm):
         model = CustomUser
         fields = ['username', 'email', 'password1', 'password2', 'date_of_birth']
 
-        def save(self, commit=True):
+        def save(self, commit: bool = True) -> CustomUser:
             user = super().save(commit=False)
             user.save()
             return user

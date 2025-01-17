@@ -1,4 +1,7 @@
+from typing import Dict, Union, Optional, List, Any
+
 from django.contrib.auth.decorators import login_required
+from django.db.models import QuerySet
 from django.http import HttpResponse, HttpRequest, JsonResponse
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, logout, update_session_auth_hash
@@ -11,6 +14,8 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from datetime import date, timedelta
+from rest_framework.request import Request
+from rest_framework.serializers import ModelSerializer
 
 from .forms import CustomUserCreationForm
 from .models import CustomUser, Hobby, FriendRequest
@@ -18,7 +23,7 @@ from .serializers import HobbySerializer, UserProfileSerializer, FriendRequestSe
 
 
 
-def register_view(request):
+def register_view(request: HttpRequest) -> HttpResponse:
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
@@ -29,7 +34,7 @@ def register_view(request):
         form = CustomUserCreationForm()
     return render(request, 'api/spa/register.html', {'form': form})
 
-def login_view(request):
+def login_view(request: HttpRequest) -> HttpResponse:
     if request.method == 'POST':
         form = AuthenticationForm(request, data=request.POST)
         if form.is_valid():
@@ -41,23 +46,23 @@ def login_view(request):
         form = AuthenticationForm()
     return render(request, 'api/spa/login.html', {'form': form})
 
-def logout_view(request):
+def logout_view(request: HttpRequest) -> HttpResponse:
     logout(request)
     return redirect('login')
 
 
 class HobbyViewSet(viewsets.ModelViewSet):
-    queryset = Hobby.objects.all()
-    serializer_class = HobbySerializer
-    permission_classes = [IsAuthenticated]
+    queryset: QuerySet[Hobby] = Hobby.objects.all()
+    serializer_class: type[HobbySerializer] = HobbySerializer
+    permission_classes: list[type[IsAuthenticated]] = [IsAuthenticated]
 
-    def list(self, request):
+    def list(self, request: Request) -> Response:
         # Get all hobbies and mark which ones the user has
-        hobbies = self.get_queryset()
-        user_hobby_ids = request.user.hobbies.values_list('id', flat=True)
+        hobbies: QuerySet[Hobby] = self.get_queryset()
+        user_hobby_ids: QuerySet[int] = request.user.hobbies.values_list('id', flat=True)
 
-        serializer = self.get_serializer(hobbies, many=True)
-        data = serializer.data
+        serializer: ModelSerializer = self.get_serializer(hobbies, many=True)
+        data: List[Dict[str, Any]] = serializer.data
 
         # Add a field to indicate if user has this hobby
         for hobby in data:
@@ -66,21 +71,21 @@ class HobbyViewSet(viewsets.ModelViewSet):
         return Response(data)
 
     @action(detail=True, methods=['post'])
-    def add_to_profile(self, request, pk=None):
-        hobby = self.get_object()
+    def add_to_profile(self, request: Request, pk: Optional[int] = None) -> Response:
+        hobby: Hobby = self.get_object()
         request.user.hobbies.add(hobby)
         return Response({'status': 'hobby added to profile'})
 
     @action(detail=True, methods=['post'])
-    def remove_from_profile(self, request, pk=None):
-        hobby = self.get_object()
+    def remove_from_profile(self, request: Request, pk: Optional[int] = None) -> Response:
+        hobby: Hobby = self.get_object()
         request.user.hobbies.remove(hobby)
         return Response({'status': 'hobby removed from profile'})
 
     @action(detail=False, methods=['post'])
     @transaction.atomic
-    def create_hobby(self, request):
-        name = request.data.get('name', '').lower().strip()
+    def create_hobby(self, request: Request) -> Response:
+        name: str = request.data.get('name', '').lower().strip()
 
         if not name:
             return Response(
@@ -88,6 +93,8 @@ class HobbyViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        hobby: Hobby
+        created: bool
         hobby, created = Hobby.objects.get_or_create(
             name=name,
             defaults={'name': name}
@@ -96,7 +103,7 @@ class HobbyViewSet(viewsets.ModelViewSet):
         # Automatically add to user's profile when creating
         request.user.hobbies.add(hobby)
 
-        data = {
+        data: Dict[str, Union[int, str, bool]] = {
             'id': hobby.id,
             'name': hobby.name,
             'created': created,
@@ -110,56 +117,56 @@ class HobbyViewSet(viewsets.ModelViewSet):
 
 @method_decorator(ensure_csrf_cookie, name='dispatch')
 class UserProfileViewSet(viewsets.GenericViewSet):
-    serializer_class = UserProfileSerializer
-    permission_classes = [IsAuthenticated]
+    serializer_class: type[UserProfileSerializer] = UserProfileSerializer
+    permission_classes: list[type[IsAuthenticated]] = [IsAuthenticated]
 
-    def get_object(self):
+    def get_object(self) -> CustomUser:
         # Return the current authenticated user
         return self.request.user
 
     @action(detail=False, methods=['get'])
-    def me(self, request):
+    def me(self, request: Request) -> Response:
         # Get current user's profile
-        serializer = self.get_serializer(request.user)
+        serializer: UserProfileSerializer = self.get_serializer(request.user)
         return Response(serializer.data)
 
     @action(detail=False, methods=['get'])
-    def search_users(self, request):
+    def search_users(self, request: Request) -> Response:
         """Search for users with similar hobbies and optional age filtering."""
         try:
             # Get query parameters
-            min_age = request.query_params.get('min_age')
-            max_age = request.query_params.get('max_age')
-            page = int(request.query_params.get('page', 1))
-            per_page = 10  # Fixed page size
+            min_age: Optional[str] = request.query_params.get('min_age')
+            max_age: Optional[str] = request.query_params.get('max_age')
+            page: int = int(request.query_params.get('page', 1))
+            per_page: int = 10  # Fixed page size
 
             # Get current user's hobbies
-            user_hobbies = request.user.hobbies.all()
-            
+            user_hobbies: models.QuerySet = request.user.hobbies.all()
+
             # Base queryset excluding the current user
-            queryset = CustomUser.objects.exclude(id=request.user.id)
+            queryset: models.QuerySet[CustomUser] = CustomUser.objects.exclude(id=request.user.id)
 
             # Filter users who have at least one hobby in common
             if user_hobbies:
                 queryset = queryset.filter(hobbies__in=user_hobbies).distinct()
-            
+
             # Apply age filters if provided
             if min_age or max_age:
-                today = date.today()
-                
+                today: date = date.today()
+
                 if min_age:
                     try:
-                        max_date = today - timedelta(days=int(min_age) * 365)
+                        max_date: date = today - timedelta(days=int(min_age) * 365)
                         queryset = queryset.filter(date_of_birth__lte=max_date)
                     except ValueError:
                         return Response(
                             {'error': 'Invalid minimum age value'},
                             status=status.HTTP_400_BAD_REQUEST
                         )
-                
+
                 if max_age:
                     try:
-                        min_date = today - timedelta(days=(int(max_age) + 1) * 365)
+                        min_date: date = today - timedelta(days=(int(max_age) + 1) * 365)
                         queryset = queryset.filter(date_of_birth__gt=min_date)
                     except ValueError:
                         return Response(
@@ -176,34 +183,34 @@ class UserProfileViewSet(viewsets.GenericViewSet):
             ).order_by('-common_hobbies_count')
 
             # Implement pagination
-            total_users = queryset.count()
-            total_pages = (total_users + per_page - 1) // per_page
-            
+            total_users: int = queryset.count()
+            total_pages: int = (total_users + per_page - 1) // per_page
+
             # Validate page number
             if page < 1:
                 page = 1
             elif page > total_pages and total_pages > 0:
                 page = total_pages
 
-            start = (page - 1) * per_page
-            end = start + per_page
-            users_page = queryset[start:end]
+            start: int = (page - 1) * per_page
+            end: int = start + per_page
+            users_page: List[CustomUser] = list(queryset[start:end])
 
             # Serialize the results
-            serializer = self.get_serializer(users_page, many=True)
-            data = serializer.data
+            serializer: UserProfileSerializer = self.get_serializer(users_page, many=True)
+            data: List[Dict[str, Any]] = serializer.data
 
             # Add the common hobbies count, age, and friendship status to each user
             today = date.today()
             for user_data, user_obj in zip(data, users_page):
                 user_data['common_hobbies_count'] = user_obj.common_hobbies_count
-                
+
                 # Add age
                 if user_obj.date_of_birth:
-                    age = today.year - user_obj.date_of_birth.year
+                    age: int = today.year - user_obj.date_of_birth.year
                     if today.month < user_obj.date_of_birth.month or (
-                        today.month == user_obj.date_of_birth.month and 
-                        today.day < user_obj.date_of_birth.day
+                            today.month == user_obj.date_of_birth.month and
+                            today.day < user_obj.date_of_birth.day
                     ):
                         age -= 1
                     user_data['age'] = age
@@ -212,7 +219,7 @@ class UserProfileViewSet(viewsets.GenericViewSet):
                 user_data['is_friend'] = request.user.friends.filter(id=user_obj.id).exists()
 
                 # Check for pending friend requests
-                pending_request = FriendRequest.objects.filter(
+                pending_request: Optional[FriendRequest] = FriendRequest.objects.filter(
                     (models.Q(sender=request.user) & models.Q(receiver=user_obj)) |
                     (models.Q(sender=user_obj) & models.Q(receiver=request.user)),
                     status=FriendRequest.PENDING
@@ -233,14 +240,17 @@ class UserProfileViewSet(viewsets.GenericViewSet):
             )
 
     @action(detail=False, methods=['put', 'patch'])
-    def update_profile(self, request):
-        user = self.get_object()
-        is_partial = request.method == 'PATCH'
+    def update_profile(self, request: Request) -> Response:
+        user: CustomUser = self.get_object()
+        is_partial: bool = request.method == 'PATCH'
 
         # Remove empty fields from request data
-        cleaned_data = {k: v for k, v in request.data.items() if v is not None and v != ''}
+        cleaned_data: Dict[str, Any] = {
+            k: v for k, v in request.data.items()
+            if v is not None and v != ''
+        }
 
-        serializer = self.get_serializer(
+        serializer: UserProfileSerializer = self.get_serializer(
             user,
             data=cleaned_data,
             partial=is_partial
@@ -248,7 +258,9 @@ class UserProfileViewSet(viewsets.GenericViewSet):
 
         if serializer.is_valid():
             # Check if only password is being updated
-            is_password_only_update = set(cleaned_data.keys()).issubset({'current_password', 'new_password'})
+            is_password_only_update: bool = set(cleaned_data.keys()).issubset(
+                {'current_password', 'new_password'}
+            )
 
             user = serializer.save()
 
@@ -269,23 +281,23 @@ def main_spa(request: HttpRequest) -> HttpResponse:
     return render(request, 'api/spa/index.html', {})
 
 @login_required(login_url='login')
-def other_spa_routes(request, path=None):
+def other_spa_routes(request: HttpRequest, path: Optional[str] = None) -> HttpResponse:
     return render(request, 'api/spa/index.html', {})
 
 class FriendRequestViewSet(viewsets.ModelViewSet):
     serializer_class = FriendRequestSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[FriendRequest]:
         return FriendRequest.objects.filter(
-            models.Q(sender=self.request.user) | 
+            models.Q(sender=self.request.user) |
             models.Q(receiver=self.request.user)
         )
 
     @action(detail=False, methods=['get'])
-    def pending(self, request):
+    def pending(self, request: Request) -> Response:
         """Get all pending friend requests for the current user"""
-        pending_requests = FriendRequest.objects.filter(
+        pending_requests: QuerySet[FriendRequest] = FriendRequest.objects.filter(
             receiver=request.user,
             status=FriendRequest.PENDING
         )
@@ -293,25 +305,24 @@ class FriendRequestViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     @action(detail=False, methods=['get'])
-    def friends(self, request):
+    def friends(self, request: Request) -> Response:
         """Get all friends of the current user"""
-        user = request.user
-        friends = user.friends.all()
+        user: CustomUser = request.user
+        friends: QuerySet[CustomUser] = user.friends.all()
         serializer = UserProfileSerializer(friends, many=True)
         return Response(serializer.data)
 
-    def create(self, request):
+    def create(self, request: Request) -> Response:
         try:
-            receiver_id = request.data.get('receiver')
+            receiver_id: Optional[int] = request.data.get('receiver')
             if not receiver_id:
                 return Response(
                     {'error': 'Receiver ID is required'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            # Try to get the receiver user
             try:
-                receiver = CustomUser.objects.get(id=receiver_id)
+                receiver: CustomUser = CustomUser.objects.get(id=receiver_id)
             except CustomUser.DoesNotExist:
                 return Response(
                     {'error': 'Receiver user not found'},
@@ -324,15 +335,13 @@ class FriendRequestViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            # Check if users are already friends
             if request.user.friends.filter(id=receiver_id).exists():
                 return Response(
                     {'error': 'Users are already friends'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            # Check ALL existing friend requests between these users
-            existing_request = FriendRequest.objects.filter(
+            existing_request: Optional[FriendRequest] = FriendRequest.objects.filter(
                 models.Q(sender=request.user, receiver=receiver) |
                 models.Q(sender=receiver, receiver=request.user)
             ).first()
@@ -344,14 +353,12 @@ class FriendRequestViewSet(viewsets.ModelViewSet):
                         status=status.HTTP_400_BAD_REQUEST
                     )
                 elif existing_request.status == FriendRequest.REJECTED:
-                    # If there's a rejected request, update it to pending
                     existing_request.status = FriendRequest.PENDING
                     existing_request.save()
                     serializer = self.get_serializer(existing_request)
                     return Response(serializer.data, status=status.HTTP_200_OK)
 
-            # Create new friend request
-            friend_request = FriendRequest.objects.create(
+            friend_request: FriendRequest = FriendRequest.objects.create(
                 sender=request.user,
                 receiver=receiver,
                 status=FriendRequest.PENDING
@@ -367,14 +374,14 @@ class FriendRequestViewSet(viewsets.ModelViewSet):
             )
 
     @action(detail=True, methods=['post'])
-    def accept(self, request, pk=None):
-        friend_request = self.get_object()
+    def accept(self, request: Request, pk: Optional[int] = None) -> Response:
+        friend_request: FriendRequest = self.get_object()
         if friend_request.receiver != request.user:
             return Response(
                 {'error': 'You can only accept requests sent to you'},
                 status=status.HTTP_403_FORBIDDEN
             )
-        
+
         if friend_request.accept():
             return Response({'status': 'friend request accepted'})
         return Response(
@@ -383,14 +390,14 @@ class FriendRequestViewSet(viewsets.ModelViewSet):
         )
 
     @action(detail=True, methods=['post'])
-    def reject(self, request, pk=None):
-        friend_request = self.get_object()
+    def reject(self, request: Request, pk: Optional[int] = None) -> Response:
+        friend_request: FriendRequest = self.get_object()
         if friend_request.receiver != request.user:
             return Response(
                 {'error': 'You can only reject requests sent to you'},
                 status=status.HTTP_403_FORBIDDEN
             )
-        
+
         if friend_request.reject():
             return Response({'status': 'friend request rejected'})
         return Response(
@@ -399,9 +406,9 @@ class FriendRequestViewSet(viewsets.ModelViewSet):
         )
 
     @action(detail=False, methods=['post'])
-    def unfollow(self, request):
+    def unfollow(self, request: Request) -> Response:
         """Remove a user from friends list"""
-        user_id = request.data.get('user_id')
+        user_id: Optional[int] = request.data.get('user_id')
         if not user_id:
             return Response(
                 {'error': 'user_id is required'},
@@ -409,17 +416,15 @@ class FriendRequestViewSet(viewsets.ModelViewSet):
             )
 
         try:
-            friend = CustomUser.objects.get(id=user_id)
-            
-            # Remove from friends list
+            friend: CustomUser = CustomUser.objects.get(id=user_id)
+
             request.user.friends.remove(friend)
-            
-            # Delete any existing friend requests between these users
+
             FriendRequest.objects.filter(
                 (models.Q(sender=request.user) & models.Q(receiver=friend)) |
                 (models.Q(sender=friend) & models.Q(receiver=request.user))
             ).delete()
-            
+
             return Response({'status': 'user unfollowed'})
         except CustomUser.DoesNotExist:
             return Response(
