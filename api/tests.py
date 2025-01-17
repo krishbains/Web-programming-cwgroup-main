@@ -1,19 +1,24 @@
-#Testing was done in Firefox, using geckodriver
-from django.test import TestCase
 from django.test import LiveServerTestCase
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.firefox.options import Options
+
 
 class SignupTest(LiveServerTestCase):
     def setUp(self):
-        # Start Firefox WebDriver
-        self.driver = webdriver.Firefox()
-        self.driver.implicitly_wait(10)  # Implicit wait for elements
-        self.wait = WebDriverWait(self.driver, 15)  # Explicit wait for dynamic elements
+        # Configure Firefox options
+        firefox_options = Options()
+        # Running with browser visible - no headless mode
+        firefox_options.add_argument('--no-sandbox')
+        firefox_options.add_argument('--disable-dev-shm-usage')
+
+        # Start Firefox WebDriver with options
+        self.driver = webdriver.Firefox(options=firefox_options)
+        self.driver.implicitly_wait(10)
+        self.wait = WebDriverWait(self.driver, 15)
 
     def tearDown(self):
         # Quit the WebDriver after each test
@@ -22,23 +27,37 @@ class SignupTest(LiveServerTestCase):
     def test_signup(self):
         try:
             # Navigate to the signup page
-            self.driver.get(self.live_server_url + "/register/")
-            
-            # Fill in the signup form
-            self.driver.find_element(By.NAME, "username").send_keys("seleniumtestuser")
-            self.driver.find_element(By.NAME, "email").send_keys("seleniumtestuser@example.com")
-            self.driver.find_element(By.NAME, "password1").send_keys("seleniumpassword123")
-            self.driver.find_element(By.NAME, "password2").send_keys("seleniumpassword123")
-            self.driver.find_element(By.NAME, "date_of_birth").send_keys("2000-01-01")
-            self.driver.find_element(By.CSS_SELECTOR, "button[type='submit']").click()
+            self.driver.get(f"{self.live_server_url}/register/")
 
-            # Wait for the dynamic greeting to appear
+            # Wait for form to be present
+            form = self.wait.until(
+                EC.presence_of_element_located((By.TAG_NAME, "form"))
+            )
+
+            # Fill in the signup form
+            form.find_element(By.NAME, "username").send_keys("seleniumtestuser")
+            form.find_element(By.NAME, "email").send_keys("seleniumtestuser@example.com")
+            form.find_element(By.NAME, "password1").send_keys("seleniumpassword123")
+            form.find_element(By.NAME, "password2").send_keys("seleniumpassword123")
+            form.find_element(By.NAME, "date_of_birth").send_keys("2000-01-01")
+
+            # Submit the form
+            submit_button = form.find_element(By.CSS_SELECTOR, "button[type='submit']")
+            self.wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "button[type='submit']")))
+            submit_button.click()
+
+            # Wait for the greeting
             greeting = self.wait.until(
                 EC.presence_of_element_located((By.XPATH, "//h1[contains(text(), 'Hello,')]"))
             )
 
-            # Assert the greeting is correct
+            # Assert the greeting
             self.assertIn("Hello,", greeting.text)
-        except TimeoutException:
-            print(self.driver.page_source)  # Debug the page source if the test fails
-            self.fail("Signup test failed due to timeout.")
+
+        except TimeoutException as e:
+            # Enhanced error reporting
+            print("\nTest failed with TimeoutException:")
+            print(f"Current URL: {self.driver.current_url}")
+            print("\nPage source:")
+            print(self.driver.page_source)
+            raise e
