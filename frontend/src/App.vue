@@ -5,13 +5,19 @@
                 class="nav-link"
                 :to="{name: 'Main Page'}"
             >
-                Main Page
+                Home
             </router-link>
             <router-link
                 class="nav-link"
                 :to="{name: 'Profile page'}"
             >
                 Profile Page
+            </router-link>
+            <router-link
+                class="nav-link"
+                :to="{name: 'User Search'}"
+            >
+                Find Users
             </router-link>
             <router-link
                 class="nav-link"
@@ -25,12 +31,12 @@
             >
                 Friends
             </router-link>
-            <router-link
-                class="nav-link"
-                :to="{name: 'Other Page'}"
+            <a
+                href="/login/"
+                class="nav-link logout-link"
             >
-                Other Page
-            </router-link>
+                Logout
+            </a>
         </nav>
         <RouterView class="flex-shrink-0" />
     </main>
@@ -65,11 +71,28 @@ export default defineComponent({
 }
 
 .nav-link:hover {
-    background: #e9ecef;
+    background-color: #e9ecef;
+    color: #212529;
 }
 
-.nav-link.router-link-active {
-    background: #007bff;
+.router-link-active {
+    background-color: #007bff;
+    color: white;
+}
+
+.router-link-active:hover {
+    background-color: #0056b3;
+    color: white;
+}
+
+.logout-link {
+    margin-left: auto;
+    background-color: #dc3545;
+    color: white;
+}
+
+.logout-link:hover {
+    background-color: #c82333;
     color: white;
 }
 </style>

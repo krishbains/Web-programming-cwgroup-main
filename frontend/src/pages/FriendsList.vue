@@ -3,9 +3,8 @@ import { ref, onMounted } from 'vue'
 
 interface Friend {
   id: number;
-  name: string;
-  email: string;
-  hobbies: string[];
+  username: string;
+  hobbies: { id: number; name: string; }[];
   date_of_birth: string;
 }
 
@@ -13,15 +12,9 @@ const friends = ref<Friend[]>([])
 
 const fetchFriends = async () => {
   try {
-    // In debug mode, get friends from localStorage
-    const debugFriends = JSON.parse(localStorage.getItem('debugFriends') || '[]')
-    friends.value = debugFriends
-    return
-
-    // Normal API call (commented out for debug)
-    /*const response = await fetch('/api/friend-requests/friends/')
+    const response = await fetch('/api/friend-requests/friends/')
     if (!response.ok) throw new Error('Failed to fetch friends')
-    friends.value = await response.json()*/
+    friends.value = await response.json()
   } catch (error) {
     console.error('Error fetching friends:', error)
   }
@@ -29,22 +22,34 @@ const fetchFriends = async () => {
 
 const unfollowFriend = async (friendId: number) => {
   try {
-    // Debug mode: remove friend from localStorage
-    const debugFriends = JSON.parse(localStorage.getItem('debugFriends') || '[]')
-    const updatedFriends = debugFriends.filter((friend: Friend) => friend.id !== friendId)
-    localStorage.setItem('debugFriends', JSON.stringify(updatedFriends))
-    friends.value = updatedFriends
-    return
+    // Get CSRF token from cookie
+    const csrfToken = document.cookie.split('; ')
+      .find(row => row.startsWith('csrftoken='))
+      ?.split('=')[1];
 
-    // Normal API call (commented out for debug)
-    /*const response = await fetch(`/api/friends/${friendId}/unfollow/`, {
+    if (!csrfToken) {
+      throw new Error('CSRF token not found');
+    }
+
+    const response = await fetch(`/api/friend-requests/unfollow/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-      }
-    })
-    if (!response.ok) throw new Error('Failed to unfollow friend')
-    await fetchFriends()*/
+        'X-CSRFToken': csrfToken,
+      },
+      body: JSON.stringify({
+        user_id: friendId
+      }),
+      credentials: 'include'
+    });
+
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.error || 'Failed to unfollow friend');
+    }
+
+    // Remove friend from list
+    friends.value = friends.value.filter(friend => friend.id !== friendId)
   } catch (error) {
     console.error('Error unfollowing friend:', error)
   }
@@ -79,15 +84,14 @@ onMounted(() => {
     <div v-else class="friends-grid">
       <div v-for="friend in friends" :key="friend.id" class="friend-card">
         <div class="friend-header">
-          <h3>{{ friend.name }}</h3>
+          <h3>{{ friend.username }}</h3>
           <span class="age">{{ calculateAge(friend.date_of_birth) }} years old</span>
         </div>
-        <p class="email">{{ friend.email }}</p>
         <div class="hobbies">
           <h4>Hobbies:</h4>
           <div class="hobby-tags">
-            <span v-for="hobby in friend.hobbies" :key="hobby" class="hobby-tag">
-              {{ hobby }}
+            <span v-for="hobby in friend.hobbies" :key="hobby.id" class="hobby-tag">
+              {{ hobby.name }}
             </span>
           </div>
         </div>
