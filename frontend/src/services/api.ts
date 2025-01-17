@@ -72,10 +72,22 @@ class ApiService {
         return this.request<Hobby[]>('/hobbies/');
     }
 
-    async addHobby(name: string): Promise<ApiResponse<Hobby>> {
-        return this.request<Hobby>('/hobbies/add_to_profile/', {
+    async createHobby(name: string): Promise<ApiResponse<Hobby>> {
+        return this.request<Hobby>('/hobbies/create_hobby/', {
             method: 'POST',
             body: JSON.stringify({name}),
+        });
+    }
+
+    async addHobbyToProfile(hobbyId: number): Promise<ApiResponse<void>> {
+        return this.request<void>(`/hobbies/${hobbyId}/add_to_profile/`, {
+            method: 'POST',
+        });
+    }
+
+    async removeHobbyFromProfile(hobbyId: number): Promise<ApiResponse<void>> {
+        return this.request<void>(`/hobbies/${hobbyId}/remove_from_profile/`, {
+            method: 'POST',
         });
     }
 
