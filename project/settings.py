@@ -46,7 +46,7 @@ MIDDLEWARE = [
 if os.getenv('OPENSHIFT_BUILD_NAME'):
     CORS_ALLOWED_ORIGINS = [
         "http://localhost:5173",
-        f"https://{os.getenv('OPENSHIFT_BUILD_NAME')}.apps.cs.cf.ac.uk",
+        "https://django-psql-persistent-web-apps-ec22663.apps.a.comp-teach.qmul.ac.uk",
     ]
 else:
     CORS_ALLOWED_ORIGINS = [
