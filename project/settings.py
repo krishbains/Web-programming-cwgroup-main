@@ -53,6 +53,10 @@ else:
         "http://localhost:5173",
     ]
 
+CSRF_TRUSTED_ORIGINS = [
+    "https://django-psql-persistent-web-apps-ec22663.apps.a.comp-teach.qmul.ac.uk",
+]
+
 CORS_ALLOW_CREDENTIALS = True
 
 ROOT_URLCONF = 'project.urls'
