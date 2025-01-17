@@ -92,141 +92,146 @@ class ProfileTest(LiveServerTestCase):
             print(self.driver.page_source)
             raise
 
-    def test_profile_page(self):
+    def test_profile_edit(self):
         try:
-            print("\nStarting profile page test")
+            print("\nStarting profile edit test")
+            # First register and get to profile page
             self.register_user()
 
             print("\nNavigating to profile page")
             self.driver.get(f"{self.live_server_url}/profile/")
-            print(f"Current URL after navigation: {self.driver.current_url}")
+            time.sleep(2)  # Wait for Vue to render
 
-            # Give Vue time to render
-            time.sleep(2)
-
-            # Check for profile elements
-            profile_container = self.wait.until(
-                EC.presence_of_element_located((By.CLASS_NAME, "profile-container"))
+            # Click edit button
+            edit_button = self.wait.until(
+                EC.element_to_be_clickable((By.CLASS_NAME, "edit-btn"))
             )
-            print("Profile container found")
+            self.driver.execute_script("arguments[0].scrollIntoView();", edit_button)
+            time.sleep(1)  # Wait for scroll
+            edit_button.click()
+            print("Clicked edit button")
+            time.sleep(1)  # Wait for form animation
 
-            # Verify username
-            username_element = profile_container.find_element(
-                By.XPATH, "//div[contains(@class, 'detail-item')]/strong[contains(text(), 'Username:')]/.."
+            # Wait for edit form
+            form = self.wait.until(
+                EC.presence_of_element_located((By.CLASS_NAME, "edit-form"))
             )
-            print(f"Found username element: {username_element.text}")
-            self.assertIn("testuser", username_element.text)
+            print("Found edit form")
 
-            # Find edit button
-            edit_button = profile_container.find_element(By.CLASS_NAME, "edit-btn")
-            print("Found edit button")
+            # Scroll form into view
+            self.driver.execute_script("arguments[0].scrollIntoView();", form)
+            time.sleep(1)  # Wait for scroll
 
-            print("\nProfile page test completed successfully")
+            # Update profile information
+            new_data = {
+                "username": "updated_user",
+                "email": "updated@example.com",
+                "date_of_birth": "1995-12-25",
+                "current_password": "testpassword123",
+                "new_password": "newpassword456"
+            }
+
+            # Fill in each field with visual feedback
+            for field_id, value in new_data.items():
+                try:
+                    field = form.find_element(By.ID, field_id)
+                    # Scroll field into view
+                    self.driver.execute_script("arguments[0].scrollIntoView();", field)
+                    time.sleep(0.5)  # Wait for scroll
+
+                    # Clear field with visual feedback
+                    field.clear()
+                    time.sleep(0.3)  # Wait to see the clear
+
+                    # Type value character by character
+                    for char in value:
+                        field.send_keys(char)
+                        time.sleep(0.1)  # Wait between characters
+
+                    print(f"Updated {field_id} field")
+                    time.sleep(0.5)  # Wait to see the completed field
+
+                except Exception as e:
+                    print(f"Error updating {field_id}: {str(e)}")
+                    raise
+
+            # Scroll save button into view and click
+            save_button = form.find_element(By.CLASS_NAME, "save-btn")
+            self.driver.execute_script("arguments[0].scrollIntoView();", save_button)
+            time.sleep(1)  # Wait for scroll
+            save_button.click()
+            print("Clicked save button")
+            time.sleep(1)  # Wait for save animation
+
+            # Wait for profile details to reappear
+            profile_details = self.wait.until(
+                EC.presence_of_element_located((By.CLASS_NAME, "profile-details"))
+            )
+            print("Profile details reappeared")
+
+            # Scroll to and verify updates
+            self.driver.execute_script("arguments[0].scrollIntoView();", profile_details)
+            time.sleep(2)  # Wait for data to refresh
+
+            detail_items = profile_details.find_elements(By.CLASS_NAME, "detail-item")
+
+            for item in detail_items:
+                # Scroll each item into view as we verify it
+                self.driver.execute_script("arguments[0].scrollIntoView();", item)
+                time.sleep(0.5)
+
+                text = item.text
+                if "Username:" in text:
+                    self.assertIn("updated_user", text)
+                    print("Username verified")
+                elif "Email:" in text:
+                    self.assertIn("updated@example.com", text)
+                    print("Email verified")
+                elif "Date of Birth:" in text:
+                    self.assertIn("12/25/1995", text)
+                    print("Date of birth verified")
+
+            print("\nProfile edit test completed successfully")
+            time.sleep(2)  # Wait to see final result
+
+            # Test logging in with new password
+            print("\nTesting login with new password")
+            self.driver.get(f"{self.live_server_url}/logout/")
+            time.sleep(1)
+            self.driver.get(f"{self.live_server_url}/login/")
+
+            login_form = self.wait.until(
+                EC.presence_of_element_located((By.TAG_NAME, "form"))
+            )
+
+            # Login with new credentials - type slowly for visibility
+            username_field = login_form.find_element(By.NAME, "username")
+            password_field = login_form.find_element(By.NAME, "password")
+
+            for char in "updated_user":
+                username_field.send_keys(char)
+                time.sleep(0.1)
+
+            for char in "newpassword456":
+                password_field.send_keys(char)
+                time.sleep(0.1)
+
+            submit_button = login_form.find_element(By.CSS_SELECTOR, "button[type='submit']")
+            self.driver.execute_script("arguments[0].scrollIntoView();", submit_button)
+            time.sleep(1)
+            submit_button.click()
+
+            # Verify successful login
+            self.wait.until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, "nav.navigation"))
+            )
+            print("Successfully logged in with new credentials")
+            time.sleep(2)  # Wait to see successful login
 
         except Exception as e:
-            print(f"\nProfile page test failed with error: {str(e)}")
+            print(f"\nProfile edit test failed with error: {str(e)}")
             print(f"Current URL: {self.driver.current_url}")
             print("Page source at time of error:")
             print(self.driver.page_source)
             raise
-
-        def test_profile_edit(self):
-            try:
-                print("\nStarting profile edit test")
-                # First register and get to profile page
-                self.register_user()
-
-                print("\nNavigating to profile page")
-                self.driver.get(f"{self.live_server_url}/profile/")
-                time.sleep(2)  # Wait for Vue to render
-
-                # Click edit button
-                edit_button = self.wait.until(
-                    EC.element_to_be_clickable((By.CLASS_NAME, "edit-btn"))
-                )
-                edit_button.click()
-                print("Clicked edit button")
-
-                # Wait for edit form
-                form = self.wait.until(
-                    EC.presence_of_element_located((By.CLASS_NAME, "edit-form"))
-                )
-                print("Found edit form")
-
-                # Update profile information
-                new_data = {
-                    "username": "updated_user",
-                    "email": "updated@example.com",
-                    "date_of_birth": "1995-12-25",
-                    "current_password": "testpassword123",  # Original password from registration
-                    "new_password": "newpassword456"
-                }
-
-                # Fill in each field
-                for field_id, value in new_data.items():
-                    try:
-                        field = form.find_element(By.ID, field_id)
-                        field.clear()
-                        field.send_keys(value)
-                        print(f"Updated {field_id} field")
-                    except Exception as e:
-                        print(f"Error updating {field_id}: {str(e)}")
-                        raise
-
-                # Submit form
-                save_button = form.find_element(By.CLASS_NAME, "save-btn")
-                save_button.click()
-                print("Clicked save button")
-
-                # Wait for profile details to reappear
-                profile_details = self.wait.until(
-                    EC.presence_of_element_located((By.CLASS_NAME, "profile-details"))
-                )
-                print("Profile details reappeared")
-
-                # Verify updates
-                time.sleep(2)  # Wait for data to refresh
-                detail_items = profile_details.find_elements(By.CLASS_NAME, "detail-item")
-
-                for item in detail_items:
-                    text = item.text
-                    if "Username:" in text:
-                        self.assertIn("updated_user", text)
-                        print("Username verified")
-                    elif "Email:" in text:
-                        self.assertIn("updated@example.com", text)
-                        print("Email verified")
-                    elif "Date of Birth:" in text:
-                        self.assertIn("12/25/1995", text)
-                        print("Date of birth verified")
-
-                print("\nProfile edit test completed successfully")
-
-                # Test logging in with new password
-                print("\nTesting login with new password")
-                self.driver.get(f"{self.live_server_url}/logout/")
-                time.sleep(1)
-                self.driver.get(f"{self.live_server_url}/login/")
-
-                login_form = self.wait.until(
-                    EC.presence_of_element_located((By.TAG_NAME, "form"))
-                )
-
-                # Login with new credentials
-                login_form.find_element(By.NAME, "username").send_keys("updated_user")
-                login_form.find_element(By.NAME, "password").send_keys("newpassword456")
-                login_form.find_element(By.CSS_SELECTOR, "button[type='submit']").click()
-
-                # Verify successful login
-                self.wait.until(
-                    EC.presence_of_element_located((By.CSS_SELECTOR, "nav.navigation"))
-                )
-                print("Successfully logged in with new credentials")
-
-            except Exception as e:
-                print(f"\nProfile edit test failed with error: {str(e)}")
-                print(f"Current URL: {self.driver.current_url}")
-                print("Page source at time of error:")
-                print(self.driver.page_source)
-                raise
 
