@@ -9,6 +9,7 @@ import OtherPage from '../pages/OtherPage.vue';
 import ProfilePage from "../pages/ProfilePage.vue";
 import FriendRequests from "../pages/FriendRequests.vue";
 import FriendsList from "../pages/FriendsList.vue";
+import UserSearch from "../pages/UserSearch.vue";
 
 let base = (import.meta.env.MODE == 'development') ? import.meta.env.BASE_URL : ''
 
@@ -23,6 +24,7 @@ const router = createRouter({
         { path: '/profile/', name: 'Profile page', component: ProfilePage },
         { path: '/friend-requests/', name: 'Friend Requests', component: FriendRequests },
         { path: '/friends/', name: 'Friends List', component: FriendsList },
+        { path: '/search/', name: 'User Search', component: UserSearch },
     ]
 })
 
