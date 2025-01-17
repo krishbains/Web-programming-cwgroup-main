@@ -1,3 +1,4 @@
+from typing import Any, Optional
 from django.db import models
 from django.contrib.auth.models import AbstractUser, UserManager
 
@@ -5,26 +6,38 @@ class Hobby(models.Model):
     name = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
 
     class Meta:
         verbose_name_plural = "hobbies"
 
 class CustomUserManager(UserManager):
-    def create_user(self, username, email=None, password=None, **extra_fields):
+    def create_user(
+        self,
+        username: str,
+        email: Optional[str] = None,
+        password: Optional[str] = None,
+        **extra_fields: Any
+    ) -> "CustomUser":
         """
         Create and return a regular user.
         """
         if not username:
             raise ValueError('The Username field must be set')
         email = self.normalize_email(email)
-        user = self.model(username=username, email=email, **extra_fields)
+        user: CustomUser = self.model(username=username, email=email, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, username, email=None, password=None, **extra_fields):
+    def create_superuser(
+        self,
+        username: str,
+        email: Optional[str] = None,
+        password: Optional[str] = None,
+        **extra_fields: Any
+    ) -> "CustomUser":
         """
         Create and return a superuser.
         """
@@ -45,5 +58,5 @@ class CustomUser(AbstractUser):
     USERNAME_FIELD = 'username'
     REQUIRED_FIELDS = ['email']  # Add email as required for superusers
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.username

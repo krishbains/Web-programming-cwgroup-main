@@ -1,3 +1,4 @@
+from typing import Any, Dict
 from rest_framework import serializers
 from .models import CustomUser, Hobby
 
@@ -14,14 +15,21 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CustomUser
-        fields = ['username', 'email', 'date_of_birth', 'hobbies', 'current_password', 'new_password']
+        fields = [
+            'username',
+            'email',
+            'date_of_birth',
+            'hobbies',
+            'current_password',
+            'new_password',
+        ]
         extra_kwargs = {
             'username': {'required': False},
             'email': {'required': False},
-            'date_of_birth': {'required': False}
+            'date_of_birth': {'required': False},
         }
 
-    def validate(self, data):
+    def validate(self, data: Dict[str, Any]) -> Dict[str, Any]:
         # If user is trying to change password
         if 'new_password' in data:
             if not data.get('current_password'):
@@ -32,10 +40,9 @@ class UserProfileSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     {'current_password': 'Wrong password'}
                 )
-
         return data
 
-    def update(self, instance, validated_data):
+    def update(self, instance: CustomUser, validated_data: Dict[str, Any]) -> CustomUser:
         # Handle password update if provided
         if 'new_password' in validated_data:
             instance.set_password(validated_data['new_password'])
