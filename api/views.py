@@ -51,9 +51,35 @@ class HobbyViewSet(viewsets.ModelViewSet):
     serializer_class = HobbySerializer
     permission_classes = [IsAuthenticated]
 
+    def list(self, request):
+        # Get all hobbies and mark which ones the user has
+        hobbies = self.get_queryset()
+        user_hobby_ids = request.user.hobbies.values_list('id', flat=True)
+
+        serializer = self.get_serializer(hobbies, many=True)
+        data = serializer.data
+
+        # Add a field to indicate if user has this hobby
+        for hobby in data:
+            hobby['user_has_hobby'] = hobby['id'] in user_hobby_ids
+
+        return Response(data)
+
+    @action(detail=True, methods=['post'])
+    def add_to_profile(self, request, pk=None):
+        hobby = self.get_object()
+        request.user.hobbies.add(hobby)
+        return Response({'status': 'hobby added to profile'})
+
+    @action(detail=True, methods=['post'])
+    def remove_from_profile(self, request, pk=None):
+        hobby = self.get_object()
+        request.user.hobbies.remove(hobby)
+        return Response({'status': 'hobby removed from profile'})
+
     @action(detail=False, methods=['post'])
     @transaction.atomic
-    def add_to_profile(self, request):
+    def create_hobby(self, request):
         name = request.data.get('name', '').lower().strip()
 
         if not name:
@@ -62,19 +88,19 @@ class HobbyViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-
         hobby, created = Hobby.objects.get_or_create(
             name=name,
             defaults={'name': name}
         )
 
+        # Automatically add to user's profile when creating
         request.user.hobbies.add(hobby)
 
-        # Use serializer only once for response
         data = {
             'id': hobby.id,
             'name': hobby.name,
-            'created': created
+            'created': created,
+            'user_has_hobby': True
         }
 
         return Response(

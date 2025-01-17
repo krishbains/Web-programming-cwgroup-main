@@ -1,6 +1,7 @@
 export interface Hobby {
-  id: number;
-  name: string;
+    id: number;
+    name: string;
+    user_has_hobby: boolean;
 }
 
 export interface UserProfile {
