@@ -19,13 +19,13 @@
   
   <script lang="ts">
   import { defineComponent } from "vue";
-  import AddHobby from "../components/AddHobby.vue";
+  import CreateHobby from "../components/CreateHobby.vue";
   import AllHobbies from "../components/AllHobbies.vue";
   import { Hobby } from "../stores/hobbyStore.ts";
   
   export default defineComponent({
     components: {
-      AddHobby,
+      CreateHobby,
       AllHobbies,
     },
     methods: {
