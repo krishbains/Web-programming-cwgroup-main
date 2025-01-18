@@ -91,7 +91,7 @@ if os.getenv('OPENSHIFT_BUILD_NAME'):
     }
 
 AUTH_USER_MODEL = 'api.CustomUser'
-
+TIME_ZONE = 'Europe/London'
 # Rest of your settings remain the same...
 # Password validation, Internationalization, Static files, etc.
 

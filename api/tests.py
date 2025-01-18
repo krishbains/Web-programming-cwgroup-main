@@ -1,4 +1,4 @@
-from django.test import LiveServerTestCase
+from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -9,33 +9,22 @@ from selenium.webdriver.common.keys import Keys
 import time
 
 
-class ProfileTest(LiveServerTestCase):
+class ProfileTest(StaticLiveServerTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        print(f"\nLive Server URL: {cls.live_server_url}")
+        cls.driver = webdriver.Chrome()
+        cls.driver.set_window_size(1920,1088)
+        cls.driver.maximize_window()
+        cls.driver.implicitly_wait(10)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.driver.quit()
+        super().tearDownClass()
 
     def setUp(self):
-        firefox_options = Options()
-        firefox_options.add_argument('--no-sandbox')
-        firefox_options.add_argument('--disable-dev-shm-usage')
-        firefox_options.add_argument('--window-size=1920,1080')
-
-        self.driver = webdriver.Firefox(options=firefox_options)
-        self.driver.implicitly_wait(10)
         self.wait = WebDriverWait(self.driver, 15)
-        print("\nSetup completed, browser initialized")
-
-    def tearDown(self):
-        if hasattr(self, 'driver'):
-            # Capture page source if test failed
-            if hasattr(self._outcome, 'errors'):
-                for test, exc_info in self._outcome.errors:
-                    if exc_info:
-                        print("\nTest failed! Current page source:")
-                        print(self.driver.page_source)
-                        break
-            self.driver.quit()
 
     def register_user(self):
         try:
@@ -121,7 +110,6 @@ class ProfileTest(LiveServerTestCase):
             submit_button = form.find_element(By.CSS_SELECTOR, "button[type='submit']")
             submit_button.click()
             print("Submitted registration form")
-
             nav = self.wait.until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, "nav.navigation"))
             )
@@ -203,7 +191,7 @@ class ProfileTest(LiveServerTestCase):
                 self.driver.execute_script("arguments[0].scrollIntoView();", date_field)
 
                 date_field.clear()
-                date_field.send_keys("1995-12-25")
+                date_field.send_keys("25/12/1995")
 
                 date_value = date_field.get_attribute('value')
                 print(f"Date field value after setting: {date_value}")
@@ -334,6 +322,8 @@ class ProfileTest(LiveServerTestCase):
             print("Found target user card")
 
             friend_request_btn = target_card.find_element(By.CLASS_NAME, "friend-request-btn")
+            self.driver.execute_script("arguments[0].scrollIntoView(true);", friend_request_btn)
+            self.wait.until(EC.element_to_be_clickable(friend_request_btn))
             friend_request_btn.click()
             print("Sent friend request")
 
