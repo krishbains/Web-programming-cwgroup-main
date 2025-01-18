@@ -2,8 +2,6 @@
 
 ## Group Members
 
-Group members
-
 Vinu Anbarasu - Assigned Hobbies Management (Backend & Frontend), contributed to all assigned tasks, + Openshift deployment and Selenium testing 
 
 Krish Bains - Assigned Project Setup, Git Repo creation, Login, Friend requests (Backend & Frontend), contributed to all assigned tasks, + helped fix Similar Users, Openshift deployment and Selenium testing 
@@ -15,8 +13,10 @@ Monesh Satheeswaran - Assigned Similar users & Filtering (Backend + Frontend), S
 ## Deployed Application on EECS Openshift 
 URL of Deployed Application: https://django-psql-persistent-web-apps-ec22663.apps.a.comp-teach.qmul.ac.uk/login/?next=/ 
 
-## Testing
-For Selenimum testing: Ensure requirements.txt has been run. Activate conda environment, make migrations, then run 'python manage.py test'
+## For Selenium Testing
+Ensure requirements.txt has been run. Activate conda environment, make migrations, migrate, then run 'python manage.py test'
+
+please note tests have a 15 second timeout, so tests will may take longer than expected to run.
 
 Below are the 6 test requirements from LearnOuts, and the test they are satisfied in.
 
