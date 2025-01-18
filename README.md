@@ -1,6 +1,68 @@
-# Template for ECS639U Group Coursework
+# Group49 - ECS639U Group Coursework
 
-This template should be used as the starting point for your group coursework in the module ECS639U Web Programming (at Queen Mary University of London). Use Git (github.qmul.ac.uk) to collaborate on the coursework with your group members. Module leader: Paulo Oliva <[p.oliva@qmul.ac.uk](mailto:p.oliva@qmul.ac.uk)>
+## Group Members
+
+Group members
+
+Vinu Anbarasu - Assigned Hobbies Management (Backend & Frontend), contributed to all assigned tasks, + Openshift deployment and Selenium testing 
+
+Krish Bains - Assigned Project Setup, Git Repo creation, Login, Friend requests (Backend & Frontend), contributed to all assigned tasks, + helped fix Similar Users, Openshift deployment and Selenium testing 
+
+Askari Abdur-Rahman Islam - Assigned API Validation, Pinia setup, Profile Editing (Backend + Frontend), contributed to all assigned tasks, + static types + Hobbies Management + Openshift deployment and Selenium testing
+
+Monesh Satheeswaran - Assigned Similar users & Filtering (Backend + Frontend), Seleneium testing, contributed to all assigned tasks + Openshift deployment and Selenium testing 
+
+## Deployed Application on EECS Openshift 
+URL of Deployed Application: https://django-psql-persistent-web-apps-ec22663.apps.a.comp-teach.qmul.ac.uk/login/?next=/ 
+
+## Testing
+For Selenimum testing: Ensure requirements.txt has been run
+
+1. Account Creation / Signup:
+
+Test Name: test_account_creation_and_login
+
+2. Login:
+
+Test Name: test_account_creation_and_login
+
+3. Editing All the User's Data on Their Profile Page:
+
+Test Name: test_profile_edit
+
+4. Users Page with Filtering by Age:
+
+Test Name: test_user_search_and_friend_request_acceptance
+
+5. Sending a Friend Request:
+
+Test Name: test_user_search_and_friend_request_acceptance
+
+6. Login as the Other User and Accept the Friend Request Sent:
+
+Test Name: test_user_search_and_friend_request_acceptance
+
+
+For manual testing:
+Details of Admin User
+Username: admin
+Password: admin 
+
+Details of Test Users (x5)
+Username: student1
+Password: Student123!
+
+Username: student2
+Password: Student123!
+
+Username: james_brown
+Password: Pass123!
+
+Username: professor
+Password: Prof123!
+
+Username: daniel_lopez
+Password: Pass123!
 
 ## Local development
 
@@ -45,9 +107,11 @@ To run this project in your development machine, follow these steps:
     npm run dev
     ```
 
-8. Open your browser and go to http://localhost:5173, you will be greeted with a template page.
+8. Open your browser and open http://127.0.0.1:8000/ and http://localhost:5173.
 
 ## OpenShift deployment
+
+URL: https://django-psql-persistent-web-apps-ec22663.apps.a.comp-teach.qmul.ac.uk/login/?next=/
 
 Once your project is ready to be deployed you will need to 'build' the Vue app and place it in Django's static folder.
 
