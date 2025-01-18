@@ -18,6 +18,8 @@ URL of Deployed Application: https://django-psql-persistent-web-apps-ec22663.app
 ## Testing
 For Selenimum testing: Ensure requirements.txt has been run. Activate conda environment, make migrations, then run 'python manage.py test'
 
+Below are the 6 test requirements from LearnOuts, and the test they are satisfied in.
+
 1. Account Creation / Signup:
 
     Test Name: test_account_creation_and_login
@@ -47,11 +49,13 @@ For Selenimum testing: Ensure requirements.txt has been run. Activate conda envi
 ## For manual testing:
 
 Details of Admin User
+
 Username: admin
 
 Password: admin 
 
 Details of Test Users (x5)
+
 Username: student1
 
 Password: Student123!
