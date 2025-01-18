@@ -48,13 +48,13 @@ Below are the 6 test requirements from LearnOuts, and the test they are satisfie
 
 ## For manual testing:
 
-Details of Admin User
+### Details of Admin User
 
 Username: admin
 
 Password: admin 
 
-Details of Test Users (x5)
+### Details of Test Users (x5)
 
 Username: student1
 
