@@ -16,52 +16,60 @@ Monesh Satheeswaran - Assigned Similar users & Filtering (Backend + Frontend), S
 URL of Deployed Application: https://django-psql-persistent-web-apps-ec22663.apps.a.comp-teach.qmul.ac.uk/login/?next=/ 
 
 ## Testing
-For Selenimum testing: Ensure requirements.txt has been run
+For Selenimum testing: Ensure requirements.txt has been run. Activate conda environment, make migrations, then run 'python manage.py test'
 
 1. Account Creation / Signup:
 
-Test Name: test_account_creation_and_login
+    Test Name: test_account_creation_and_login
 
 2. Login:
 
-Test Name: test_account_creation_and_login
+    Test Name: test_account_creation_and_login
 
 3. Editing All the User's Data on Their Profile Page:
 
-Test Name: test_profile_edit
+    Test Name: test_profile_edit
 
 4. Users Page with Filtering by Age:
 
-Test Name: test_user_search_and_friend_request_acceptance
+    Test Name: test_profile_edit
 
 5. Sending a Friend Request:
 
-Test Name: test_user_search_and_friend_request_acceptance
+    Test Name: test_user_search_and_friend_request_acceptance
 
 6. Login as the Other User and Accept the Friend Request Sent:
 
-Test Name: test_user_search_and_friend_request_acceptance
+    Test Name: test_user_search_and_friend_request_acceptance
 
 
-For manual testing:
+
+## For manual testing:
+
 Details of Admin User
 Username: admin
+
 Password: admin 
 
 Details of Test Users (x5)
 Username: student1
+
 Password: Student123!
 
 Username: student2
+
 Password: Student123!
 
 Username: james_brown
+
 Password: Pass123!
 
 Username: professor
+
 Password: Prof123!
 
 Username: daniel_lopez
+
 Password: Pass123!
 
 ## Local development
